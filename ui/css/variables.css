@@ -1,0 +1,47 @@
+/* CSS Variables - CSS 变量定义 */
+
+:root {
+    /* 颜色 */
+    --color-primary: #4a6cf7;
+    --color-primary-hover: #3d5db0;
+    --color-secondary: #6c757d;
+    --color-secondary-hover: #5a6268;
+    --color-text: #0a190a;
+    --color-text-muted: #6b7280;
+    --color-bg: #0f172a;
+    --color-bg-alt: #ffffff;
+    --color-border: #e2e8f0;
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-error: #ef4444;
+    --color-info: #3b82f6;
+
+    /* 间距 */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+
+    /* 圆角 */
+    --radius-sm: 0.25rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 1rem;
+
+    /* 阴影 */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+
+    /* 过渡 */
+    --transition-fast: 150ms ease-in-out;
+    --transition-base: 250ms ease-in-out;
+}
+
+@media (prefers-color-scheme: dark) {
+    --color-bg: #1a1a2a;
+    --color-bg-alt: #2d2d3d;
+    --color-text: #66b31f;
+    --color-text-muted: #9ca3af;
+    --color-border: #4040a0;
+}

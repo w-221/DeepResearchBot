@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSearchAgent - 深度搜索助手</title>
+    <link rel="stylesheet" href="/ui/css/reset.css">
+    <link rel="stylesheet" href="/ui/css/variables.css">
+    <link rel="stylesheet" href="/ui/css/style.css">
+    <style>
+        /* 额外的内联样式 */
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-connected {
+            background-color: var(--color-success);
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+            animation: pulse 2s infinite;
+        }
+        .status-disconnected {
+            background-color: var(--color-error);
+        }
+        .status-connecting {
+            background-color: var(--color-warning);
+            animation: spin 1s linear infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .connection-info {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: var(--color-bg-alt);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+            border: 1px solid var(--color-border);
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- 侧边栏 -->
+        <aside class="sidebar" id="sidebar">
+            <button class="sidebar-toggle" id="sidebar-toggle" title="收起侧边栏">
+                ◀
+            </button>
+
+            <div class="sidebar-content">
+
+                <div class="sidebar-brand">
+                    <div class="brand-icon">🔍</div>
+                    <h2 class="brand-text">
+                        <span class="brand-highlight">Deep</span>Search<span class="brand-accent">Agent</span>
+                    </h2>
+                </div>
+
+                <nav class="sidebar-nav">
+                    <a href="#" class="sidebar-nav-item active" data-page="home">
+                        <span class="nav-icon">🏠</span>
+                        <span class="nav-text">首页</span>
+                    </a>
+                    <a href="#" class="sidebar-nav-item" data-page="profile">
+                        <span class="nav-icon">👤</span>
+                        <span class="nav-text">个人信息</span>
+                    </a>
+                </nav>
+
+                <div class="sidebar-footer" id="user-profile-trigger">
+                    <div class="user-card">
+                        <img src="/ui/assets/default-avatar.png" alt="头像" class="user-avatar" id="sidebar-user-avatar">
+                        <div class="user-info">
+                            <div class="user-name" id="sidebar-user-name">加载中...</div>
+                            <div class="user-email" id="sidebar-user-email"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <div class="container">
+            <!-- 主内容区域 -->
+            <main class="main" id="main-content">
+                <!-- 首页内容 -->
+                <div id="home-page">
+                    <header class="header">
+                        <h1 class="logo">请问您需要什么帮助？</h1>
+                        <p class="subtitle">
+                            Hi,我是您的深度搜索助手~<br>
+                            我可以根据您提供的主题开展深度搜索并帮你完成报告编写<br>
+                            请向我提问吧~
+                        </p>
+                    </header>
+
+                    <!-- 连接状态指示 -->
+                    <div class="connection-info">
+                        <span id="status-indicator" class="status-indicator status-disconnected"></span>
+                        <span id="connection-status">未连接</span>
+                    </div>
+
+                    <!-- 查询输入区域 -->
+                    <div class="query-section">
+                        <textarea id="query-input" placeholder="请输入您的问题..." rows="4"></textarea>
+
+                        <!-- 文件上传区域 -->
+                        <div class="file-upload-area" id="file-upload-area">
+                            <div class="file-upload-icon">📎</div>
+                            <div class="file-upload-text">点击或拖拽文件到此处上传</div>
+                            <div class="file-upload-hint">支持 PDF、Word、TXT、图片等格式</div>
+                            <input type="file" id="file-input" multiple class="file-input" accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.xls,.xlsx,.csv">
+                        </div>
+
+                        <!-- 已选文件列表 -->
+                        <div class="selected-files" id="selected-files" style="display: none;">
+                            <div class="selected-files-header">
+                                <span>已选文件</span>
+                                <button class="clear-files-btn" id="clear-files-btn">清空</button>
+                            </div>
+                            <div class="selected-files-list" id="selected-files-list"></div>
+                        </div>
+
+                        <button id="submit-btn" class="btn-primary">发送</button>
+                    </div>
+
+                    <!-- 执行进度区域 -->
+                    <div class="progress-section" id="progress-section" style="display: none;">
+                        <h3>执行进度</h3>
+                        <div id="progress-content" class="progress-content"></div>
+                    </div>
+
+                    <!-- 搜索结果区域 -->
+                    <div class="result-section" id="result-section" style="display: none;">
+                        <h2>搜索结果</h2>
+                        <div id="result-content" class="result-content"></div>
+                    </div>
+                </div>
+
+                <!-- 用户信息详情页面 -->
+                <div id="profile-page" style="display: none;">
+                    <div class="profile-container">
+                        <div class="profile-header">
+                            <h2 class="profile-title">个人信息</h2>
+                            <button class="btn-secondary" id="back-to-home">返回主页</button>
+                        </div>
+
+                        <div class="profile-card">
+                            <div class="profile-avatar-section">
+                                <img src="/ui/assets/default-avatar.png" alt="头像" class="profile-avatar" id="profile-avatar">
+                                <div class="profile-basic-info">
+                                    <h3 class="profile-name" id="profile-name">加载中...</h3>
+                                    <p class="profile-email" id="profile-email"></p>
+                                    <span class="profile-badge" id="profile-role-badge">普通用户</span>
+                                </div>
+                            </div>
+
+                            <div class="profile-details">
+                                <div class="profile-detail-item">
+                                    <label class="detail-label">员工工号</label>
+                                    <div class="detail-value" id="profile-employee-id">-</div>
+                                </div>
+
+                                <div class="profile-detail-item">
+                                    <label class="detail-label">部门</label>
+                                    <div class="detail-value" id="profile-department">-</div>
+                                </div>
+
+                                <div class="profile-detail-item">
+                                    <label class="detail-label">手机号</label>
+                                    <div class="detail-value" id="profile-phone">-</div>
+                                </div>
+
+                                <div class="profile-detail-item">
+                                    <label class="detail-label">账户状态</label>
+                                    <div class="detail-value">
+                                        <span class="status-badge" id="profile-status">-</span>
+                                    </div>
+                                </div>
+
+                                <div class="profile-detail-item">
+                                    <label class="detail-label">最后登录时间</label>
+                                    <div class="detail-value" id="profile-last-login">-</div>
+                                </div>
+                            </div>
+
+                            <div class="profile-actions">
+                                <button class="btn-danger" id="logout-btn">退出登录</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="/ui/js/auth.js"></script>
+    <script src="/ui/js/websocket.js"></script>
+    <script src="/ui/js/app.js"></script>
+</body>
+</html>

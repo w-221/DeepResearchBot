@@ -1,0 +1,54 @@
+# --- [核心依赖] Deep Agents 框架 ---
+deepagents>=0.1.0           # 核心工厂方法 create_deep_agent
+
+# --- LangChain 生态 (基础支撑) ---
+langchain>=0.2.0            # LangChain 核心库
+langchain-core>=0.2.0       # 基础组件 (Prompt, Message, Tool)
+langchain-community>=0.2.0  # 社区工具集成
+langgraph>=0.1.0            # 智能体工作流编排
+
+# --- 大模型服务 (LLM Services) ---
+langchain-openai>=0.1.0     # OpenAI 接口适配
+openai>=1.0.0               # OpenAI 官方 SDK
+
+# --- Web 服务 (API & WebSocket) ---
+fastapi>=0.100.0            # 异步 Web 框架
+uvicorn[standard]>=0.20.0   # 服务器引擎 (含 WebSocket)
+python-multipart>=0.0.6     # 文件上传支持
+
+# --- 数据库与存储 (Database) ---
+mysql-connector-python>=8.0.0 # [修正] MySQL 官方驱动 (用于 mysql_tools)
+# 注意：代码中使用的是 mysql.connector，对应这个包，而非 pymysql
+pymysql>=1.1.0               # PyMySQL 驱动 (用于 authentication 系统)
+cryptography>=41.0.0         # 密码加密库 (bcrypt 依赖)
+
+# --- 文件处理 (File Processing - upload_file_read_tool) ---
+python-docx>=1.0.0          # Word (.docx) 读取
+pypdf>=3.0.0                # [修正] PDF 读取 (代码用的是 pypdf)
+pandas>=2.0.0               # Excel 数据处理
+openpyxl>=3.1.0             # Excel 读取引擎 (Pandas 依赖)
+aiofiles>=23.0.0            # 异步文件操作
+
+# --- 外部工具集成 (Integrations) ---
+tavily-python>=0.3.0        # 联网搜索 API (已替换为百度搜索，可选)
+ragflow-sdk>=0.1.0          # 知识库 SDK (可选)
+requests>=2.31.0            # HTTP 请求库 (用于百度搜索 API)
+
+# --- 本地 RAG (Chroma 向量数据库) ---
+langchain-chroma>=0.1.0      # Chroma 集成
+chromadb>=0.4.0             # 向量数据库
+langchain-text-splitters>=0.2.0  # 文本分块
+langchain-huggingface>=0.1.0  # HuggingFace 嵌入模型（修复弃用警告）
+dashscope>=1.0.0          # 通义千问 Embeddings API
+
+# --- 基础工具 (Utilities) ---
+PyYAML>=6.0                 # [新增] YAML 配置文件解析 (prompts.py)
+pydantic>=2.0.0             # 数据校验
+python-dotenv>=1.0.0        # 环境变量管理
+typing-extensions>=4.5.0    # 类型兼容性支持
+
+# --- 认证与安全 (Authentication & Security) ---
+python-jose[cryptography]>=3.3.0  # JWT 令牌生成和验证
+bcrypt>=4.0.0                  # 密码哈希加密
+email-validator>=2.0.0          # 邮箱地址验证
+redis>=5.0.0                    # Redis 客户端（用于 Token 黑名单）
