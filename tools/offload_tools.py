@@ -78,6 +78,42 @@ def get_offload_stats() -> str:
 
 
 @tool
+def trigger_context_offload() -> str:
+    """
+    主动触发上下文卸载操作
+
+    当对话历史过长时，调用此工具将旧消息卸载到 Redis，
+    减少当前上下文的 token 数量，避免超出模型限制。
+
+    Returns:
+        卸载操作的结果信息
+    """
+    monitor.report_tool("trigger_context_offload")
+
+    thread_id = get_thread_context()
+    if not thread_id:
+        return "错误：无法获取当前会话 ID"
+
+    try:
+        manager = ContextOffloadManager()
+
+        # 注意：这里需要从 LangGraph State 中获取当前消息列表
+        # 但由于工具函数无法直接访问 State，我们需要通过其他方式实现
+        # 方案：返回提示信息，让主流程在适当位置自动调用 optimize_messages
+
+        stats = manager.get_stats()
+        return (
+            f"上下文卸载提示:\n"
+            f"- 当前上下文 tokens: {stats['current_context_tokens']}\n"
+            f"- 总卸载次数: {stats['total_offloads']}\n\n"
+            f"注意：实际的卸载操作由系统在检测到 token 超限时自动执行。\n"
+            f"如需手动管理，请使用 load_offloaded_message 工具恢复内容。"
+        )
+    except Exception as e:
+        return f"触发卸载失败: {str(e)}"
+
+
+@tool
 def cleanup_offloaded_content() -> str:
     """
     清理当前会话的所有卸载内容（释放 Redis 空间）

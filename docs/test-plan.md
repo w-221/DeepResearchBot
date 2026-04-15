@@ -1,8 +1,8 @@
-# DeepSearchAgent 企业决策支持系统 — 测试方案
+# DeepResearchBot 企业决策支持系统 — 测试方案
 
 > 版本: v1.0
 > 编写日期: 2026-04-14
-> 项目: DeepSearchAgent (沃华医药企业决策支持系统)
+> 项目: DeepSearchAgent (企业决策支持系统)
 
 ---
 
@@ -90,11 +90,11 @@ DeepSearchAgent
 ### 1.3 核心业务流程
 
 ```
-用户注册/登录 → 获取JWT Token → 创建搜索任务
-    → 主智能体编排 → 子智能体调用(知识库/数据库/网络搜索)
-    → 工具执行 → 结果生成(Markdown/PDF)
-    → WebSocket实时推送进度 → 展示结果
-    → 对话记忆持久化(MongoDB+Redis)
+1.主业务流程：用户注册/登录 → 获取JWT Token → 创建任务
+    → 主智能体编排 → 子智能体调用(RAG知识库/数据库/外部网络搜索)
+    → 工具执行 → 结果生成(输出Markdown/PDF文档)->用户登出
+2.WebSocket实时推送进度 → 前端展示执行进度
+3.对话记忆持久化(MongoDB+Redis)
 ```
 
 ### 1.4 测试策略

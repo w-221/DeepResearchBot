@@ -30,6 +30,7 @@ from api.context import set_session_context, reset_session_context, set_thread_c
 from langchain_core.messages import AIMessage
 
 from api.logger import AgentLogger, AgentLogCallbackHandler
+from utils.context_offload_manager import ContextOffloadManager
 from utils.redis_store_backend import RedisStore
 
 from utils.redis_store_backend import RedisStore
@@ -154,6 +155,13 @@ async def run_deep_agent(query: str, thread_id: str,user_id: str = None):
             content=query,
             immediate=False
         )
+
+        #【新增】自动优化上下文 - 卸载超限内容
+        offload_manager = ContextOffloadManager(max_tokens=20000)
+        optimized_messages = offload_manager.optimize_messages(messages, thread_id)
+
+        if len(optimized_messages) != len(messages):
+            logger.info(f"Context optimized: {len(messages)} → {len(optimized_messages)} messages")
 
         # 7. 执行 Agent
         monitor.report_assistant("main_agent", {"query": query})

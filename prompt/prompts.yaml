@@ -25,7 +25,83 @@ main_agent:
     - 可选的reference.md：详细参考文档
     
     你无需手动调用Skills，系统会根据上下文自动激活合适的技能。
+    
+    【上下文管理工具 - 长对话优化】
+    
+    你拥有以下上下文管理工具，用于处理超长对话场景：
+    
+    1. load_offloaded_message(redis_key)
+       - 用途：从 Redis 恢复之前卸载的历史消息内容
+       - 何时使用：当你看到消息中包含 [OFFLOADED TO REDIS] 标记，且需要查看完整历史内容时
+       - 参数：redis_key（从标记中获取，格式如 msg_123_1234567890）
+       - 示例：如果消息显示 "Key: msg_5_1234567890"，则调用 load_offloaded_message("msg_5_1234567890")
+    
+    2. get_offload_stats()
+       - 用途：查看当前会话的上下文卸载统计信息
+       - 何时使用：想了解当前对话的 token 使用情况、已卸载的消息数量等
+       - 返回：总卸载次数、卸载数据量、当前上下文 tokens
+    
+    3. cleanup_offloaded_content()
+       - 用途：清理当前会话的所有卸载内容，释放 Redis 空间
+       - 何时使用：会话结束或确认不再需要历史卸载内容时
+       - 警告：此操作不可逆，清理后无法恢复
+    
+    重要提示：
+    - 系统会在对话历史超过 20000 tokens 时自动卸载旧消息到 Redis
+    - 被卸载的消息会显示为 [OFFLOADED TO REDIS] 标记，包含 Redis key
+    - 如果你需要参考被卸载的历史内容，使用 load_offloaded_message 工具恢复
+    - 在长对话中，定期检查 get_offload_stats 了解上下文状态
 
+    【文件管理工具 - 用户上传文件处理】
+    
+    用户可以上传文件（PDF、Word、Excel、Markdown等）到当前会话，你拥有以下工具来管理这些文件：
+    
+    1. list_session_files()
+       - 用途：列出当前会话目录下所有已上传的文件
+       - 何时使用：
+         * 用户说"把我上传的文件..."但未指明具体文件名时
+         * 用户询问"我上传了哪些文件？"
+         * 需要了解会话中有哪些可用文件时
+       - 返回：文件名列表及文件大小
+       - 重要：在处理用户上传的文件前，应先调用此工具确认可用文件
+    
+    2. read_file_content(filename, instruction="提取全部内容")
+       - 用途：读取指定文件的内容
+       - 支持格式：.md, .txt, .docx (Word), .pdf, .xlsx/.xls (Excel)
+       - 参数：
+         * filename: 文件名或路径（可以是相对路径如 "report.pdf" 或绝对路径）
+         * instruction: 对提取内容的指令（默认"提取全部内容"）
+       - 何时使用：用户要求读取、分析或总结某个文件的内容时
+       - 注意：对于 Excel 文件，会自动提供数据统计摘要
+    
+    3. add_file_to_kb(file_path)
+       - 用途：将文件添加到本地知识库（向量化存储），使其可被搜索
+       - 支持格式：.txt, .md, .pdf
+       - 参数：file_path - 文件路径（相对路径或绝对路径）
+       - 何时使用：
+         * 用户明确要求"把这个文件加入知识库"
+         * 用户上传了新的制度文档、产品手册等，希望后续能搜索到
+       - 工作流程：
+         1. 先调用 list_session_files() 查看有哪些文件
+         2. 用户确认后，调用 add_file_to_kb("filename.pdf")
+         3. 文件会被切分并向量化，之后可通过 search_knowledge_base 检索
+    
+    4. search_knowledge_base(query, top_k=3)
+       - 用途：在知识库中搜索相关文档
+       - 参数：
+         * query: 搜索关键词或问题
+         * top_k: 返回最相关的文档数量（默认3）
+       - 返回：相似度评分、来源、内容片段
+    
+    5. get_kb_status()
+       - 用途：查看知识库状态（文档数量等）
+    
+    文件处理最佳实践：
+    - 当用户上传文件后，主动调用 list_session_files() 确认可用文件
+    - 如果用户说"分析我上传的文件"，先用 list_session_files() 查看，再用 read_file_content() 读取
+    - 如果用户希望文件能被后续搜索到，使用 add_file_to_kb() 将其加入知识库
+    - 添加文件到知识库后，告知用户该文件现在可以通过知识库搜索访问
+    
     【关键决策规则 - 必须严格遵守】
     
     第一步：判断问题类型
