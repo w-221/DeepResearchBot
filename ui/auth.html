@@ -8,131 +8,185 @@
     <link rel="stylesheet" href="/ui/css/variables.css">
     <link rel="stylesheet" href="/ui/css/style.css">
     <style>
-        /* 页面背景 */
+        /* Auth Page - Dark Glassmorphism Background */
         body {
-            background-size: cover;
+            background: var(--color-bg, #030712);
+            background-image:
+                radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 50%, rgba(139, 92, 246, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 0%, rgba(99, 102, 241, 0.04) 0%, transparent 60%);
             min-height: 100vh;
             margin: 0;
         }
 
-        /* 主内容区域添加半透明背景，提高可读性 */
+        /* Glass Container */
         .container {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: var(--radius-xl, 1.5rem);
             padding: 40px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-            max-width: 800px;
-            margin: 40px auto;
-            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 60px rgba(99, 102, 241, 0.05);
+            max-width: 520px;
+            margin: 60px auto;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            position: relative;
+            overflow: hidden;
         }
 
-        /* 额外的内联样式 */
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.4), transparent);
+        }
+
+        /* Auth Header Override */
+        .header {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .header::after {
+            display: none;
+        }
+
+        .logo {
+            font-size: 1.6rem;
+            background: linear-gradient(135deg, #818CF8 0%, #6366F1 50%, #A78BFA 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--color-text-muted, #64748B);
+            font-size: 0.9rem;
+        }
+
+        /* Tab Container - Pill Style */
         .tab-container {
             display: flex;
-            background: var(--color-bg-alt);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-lg);
-            padding: var(--spacing-sm);
+            background: rgba(17, 24, 39, 0.8);
+            border-radius: var(--radius-lg, 1rem);
+            margin-bottom: var(--spacing-lg, 1.5rem);
+            padding: 4px;
+            border: 1px solid rgba(148, 163, 184, 0.08);
         }
 
         .tab-btn {
             flex: 1;
-            padding: var(--spacing-md);
+            padding: 0.6rem 1rem;
             border: none;
             background: transparent;
             cursor: pointer;
-            font-size: 1rem;
-            color: var(--color-text-muted);
-            border-bottom: 3px solid transparent;
-            transition: all var(--transition-base);
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--color-text-muted, #64748B);
+            border-radius: var(--radius-md, 0.75rem);
+            transition: all var(--transition-base, 250ms cubic-bezier(0.4, 0, 0.2, 1));
         }
 
         .tab-btn:hover {
-            color: var(--color-primary);
+            color: var(--color-text-secondary, #CBD5E1);
         }
 
         .tab-btn.active {
-            color: var(--color-primary);
-            border-bottom-color: var(--color-primary);
+            color: #fff;
+            background: var(--color-primary, #6366F1);
+            box-shadow: 0 0 16px rgba(99, 102, 241, 0.2);
             font-weight: 600;
         }
 
+        /* Auth Form */
         .auth-container {
             display: flex;
-            gap: var(--spacing-lg);
+            gap: var(--spacing-lg, 1.5rem);
             align-items: flex-start;
         }
 
         .auth-form {
             flex: 1;
-            min-width: 350px;
+            min-width: 0;
         }
 
         .form-group {
-            margin-bottom: var(--spacing-md);
+            margin-bottom: var(--spacing-md, 1rem);
         }
 
         .form-label {
             display: block;
-            margin-bottom: var(--spacing-sm);
+            margin-bottom: var(--spacing-sm, 0.5rem);
             font-weight: 600;
-            color: var(--color-text);
+            font-size: 0.8rem;
+            color: var(--color-text-secondary, #CBD5E1);
+            letter-spacing: 0.01em;
         }
 
         .form-input {
             width: 100%;
-            padding: var(--spacing-md);
-            border: 2px solid var(--color-border);
-            border-radius: var(--radius-md);
-            font-size: 1rem;
+            padding: 0.7rem 1rem;
+            border: 1px solid var(--color-border, #334155);
+            border-radius: var(--radius-md, 0.75rem);
+            font-size: 0.9rem;
             font-family: inherit;
-            transition: border-color var(--transition-base);
+            transition: all var(--transition-base, 250ms ease);
             box-sizing: border-box;
+            background: rgba(17, 24, 39, 0.6);
+            color: var(--color-text, #F1F5F9);
+        }
+
+        .form-input::placeholder {
+            color: var(--color-text-muted, #64748B);
         }
 
         .form-input:focus {
             outline: none;
-            border-color: var(--color-primary);
+            border-color: var(--color-primary, #6366F1);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12), 0 0 16px rgba(99, 102, 241, 0.1);
+            background: rgba(30, 41, 59, 0.6);
         }
 
+        /* Login Type Switch - Pill Toggle */
         .login-type-switch {
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: var(--spacing-lg);
-            gap: var(--spacing-sm);
-            background: var(--color-bg-alt);
-            padding: var(--spacing-sm);
-            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-lg, 1.5rem);
+            gap: 4px;
+            background: rgba(17, 24, 39, 0.8);
+            padding: 4px;
+            border-radius: var(--radius-md, 0.75rem);
+            border: 1px solid rgba(148, 163, 184, 0.08);
         }
 
         .switch-label {
             flex: 1;
-            padding: var(--spacing-sm) var(--spacing-md);
-            border: 2px solid var(--color-primary);
-            background: var(--color-primary);
-            color: white;
+            padding: 0.5rem 0.75rem;
+            background: transparent;
+            color: var(--color-text-muted, #64748B);
             cursor: pointer;
-            font-size: 0.95rem;
-            border-radius: var(--radius-sm);
-            transition: all var(--transition-base);
-            position: relative;
-            min-width: 100px;
-            justify-content: center;
-            align-items: center;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border-radius: var(--radius-sm, 0.375rem);
+            transition: all var(--transition-base, 250ms ease);
+            border: none;
+            text-align: center;
         }
 
         .switch-label:hover {
-            border-color: var(--color-primary);
-            background: var(--color-bg-alt);
-            transform: translateY(-1px);
+            color: var(--color-text-secondary, #CBD5E1);
+            background: rgba(99, 102, 241, 0.05);
         }
 
         .switch-label.active {
-            background: white;
-            color: var(--color-primary);
-            border-color: var(--color-primary);
-            font-weight: 400;
+            background: var(--color-primary, #6366F1);
+            color: #fff;
+            font-weight: 600;
+            box-shadow: 0 0 16px rgba(99, 102, 241, 0.2);
         }
 
         .switch-label.active::after {
@@ -140,55 +194,63 @@
         }
 
         .switch-label:hover.active {
-            border-color: var(--color-primary);
+            background: var(--color-primary-hover, #818CF8);
+            border-color: transparent;
         }
 
+        /* Verification Code */
         .verification-code-group {
             display: flex;
-            gap: var(--spacing-sm);
+            gap: var(--spacing-sm, 0.5rem);
         }
 
         .verification-code-group input {
             flex: 1;
-        min-width: 150px;
-        text-align: center;
+            min-width: 150px;
+            text-align: center;
             letter-spacing: 8px;
             font-size: 1.2rem;
             font-weight: bold;
         }
 
         .send-code-btn {
-            padding: var(--spacing-sm) var(--spacing-md);
-            background: var(--color-secondary);
-            color: white;
-            border: none;
-            border-radius: var(--radius-sm);
+            padding: 0.5rem 1rem;
+            background: rgba(30, 41, 59, 0.8);
+            color: var(--color-primary, #6366F1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: var(--radius-md, 0.75rem);
             cursor: pointer;
-            font-size: 0.9rem;
-            transition: background-color var(--transition-fast);
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all var(--transition-fast, 150ms ease);
+            white-space: nowrap;
         }
 
         .send-code-btn:hover {
-            background: var(--color-secondary-hover);
+            background: rgba(99, 102, 241, 0.1);
+            box-shadow: 0 0 12px rgba(99, 102, 241, 0.15);
         }
 
         .send-code-btn:disabled {
-            opacity: 0.6;
+            opacity: 0.35;
             cursor: not-allowed;
+            box-shadow: none;
         }
 
         .countdown {
-            font-size: 0.85rem;
-            color: var(--color-text-muted);
+            font-size: 0.8rem;
+            color: var(--color-text-muted, #64748B);
         }
 
         .error-message {
-            background: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
-            padding: var(--spacing-sm) var(--spacing-md);
-            border-radius: var(--radius-sm);
-            margin-bottom: var(--spacing-md);
+            background: rgba(239, 68, 68, 0.08);
+            color: #FCA5A5;
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            padding: var(--spacing-sm, 0.5rem) var(--spacing-md, 1rem);
+            border-radius: var(--radius-md, 0.75rem);
+            margin-bottom: var(--spacing-md, 1rem);
             display: none;
+            font-size: 0.85rem;
         }
 
         .error-message.show {
@@ -196,28 +258,50 @@
         }
 
         .optional-field {
-            font-size: 0.85rem;
-            color: var(--color-text-muted);
-            margin-top: var(--spacing-xs);
+            font-size: 0.75rem;
+            color: var(--color-text-muted, #64748B);
+            margin-top: var(--spacing-xs, 0.25rem);
         }
 
         .back-to-home {
             text-align: center;
-            margin-top: var(--spacing-xl);
+            margin-top: var(--spacing-xl, 2rem);
         }
 
         .back-to-home a {
-            color: var(--color-secondary);
+            color: var(--color-text-muted, #64748B);
             text-decoration: none;
-            font-size: 0.9rem;
-            transition: color var(--transition-fast);
+            font-size: 0.85rem;
+            transition: color var(--transition-fast, 150ms ease);
         }
 
         .back-to-home a:hover {
-            color: var(--color-primary);
+            color: var(--color-primary, #6366F1);
+        }
+
+        /* Button Override */
+        .btn-primary {
+            background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+            border-radius: var(--radius-md, 0.75rem);
+            padding: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #818CF8 0%, #6366F1 100%);
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
+            transform: translateY(-1px);
         }
 
         @media (max-width: 768px) {
+            .container {
+                margin: 20px auto;
+                padding: 24px;
+                max-width: 100%;
+                border-radius: var(--radius-lg, 1rem);
+            }
+
             .auth-container {
                 flex-direction: column;
             }

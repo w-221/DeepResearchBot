@@ -1,47 +1,87 @@
-/* CSS Variables - CSS 变量定义 */
+/* CSS Variables - Design Tokens (Dark Glassmorphism Theme) */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400');
 
 :root {
-    /* 颜色 */
-    --color-primary: #4a6cf7;
-    --color-primary-hover: #3d5db0;
-    --color-secondary: #6c757d;
-    --color-secondary-hover: #5a6268;
-    --color-text: #0a190a;
-    --color-text-muted: #6b7280;
-    --color-bg: #0f172a;
-    --color-bg-alt: #ffffff;
-    --color-border: #e2e8f0;
-    --color-success: #10b981;
-    --color-warning: #f59e0b;
-    --color-error: #ef4444;
-    --color-info: #3b82f6;
+    /* Primary Palette */
+    --color-primary: #6366F1;
+    --color-primary-hover: #818CF8;
+    --color-primary-active: #4F46E5;
+    --color-secondary: #64748B;
+    --color-secondary-hover: #94A3B8;
+    --color-accent: #22C55E;
+    --color-accent-hover: #16A34A;
 
-    /* 间距 */
+    /* Text Colors */
+    --color-text: #F1F5F9;
+    --color-text-secondary: #CBD5E1;
+    --color-text-muted: #64748B;
+    --color-text-inverse: #0F172A;
+
+    /* Background Colors */
+    --color-bg: #030712;
+    --color-bg-alt: #111827;
+    --color-bg-elevated: #1E293B;
+    --color-bg-surface: rgba(30, 41, 59, 0.6);
+
+    /* Border & Divider */
+    --color-border: #334155;
+    --color-border-light: rgba(148, 163, 184, 0.12);
+
+    /* Semantic Colors */
+    --color-success: #22C55E;
+    --color-warning: #F59E0B;
+    --color-error: #EF4444;
+    --color-info: #3B82F6;
+
+    /* Glassmorphism */
+    --glass-bg: rgba(15, 23, 42, 0.6);
+    --glass-bg-hover: rgba(30, 41, 59, 0.7);
+    --glass-border: rgba(148, 163, 184, 0.1);
+    --glass-border-hover: rgba(148, 163, 184, 0.2);
+    --glass-blur: 16px;
+
+    /* Glow Effects */
+    --glow-primary: 0 0 20px rgba(99, 102, 241, 0.15);
+    --glow-accent: 0 0 20px rgba(34, 197, 94, 0.15);
+    --glow-error: 0 0 20px rgba(239, 68, 68, 0.15);
+
+    /* Spacing */
     --spacing-xs: 0.25rem;
     --spacing-sm: 0.5rem;
     --spacing-md: 1rem;
     --spacing-lg: 1.5rem;
     --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
 
-    /* 圆角 */
-    --radius-sm: 0.25rem;
-    --radius-md: 0.5rem;
+    /* Border Radius */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.75rem;
     --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+    --radius-full: 9999px;
 
-    /* 阴影 */
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.6);
+    --shadow-glow: 0 0 30px rgba(99, 102, 241, 0.08);
 
-    /* 过渡 */
-    --transition-fast: 150ms ease-in-out;
-    --transition-base: 250ms ease-in-out;
-}
+    /* Transitions */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
 
-@media (prefers-color-scheme: dark) {
-    --color-bg: #1a1a2a;
-    --color-bg-alt: #2d2d3d;
-    --color-text: #66b31f;
-    --color-text-muted: #9ca3af;
-    --color-border: #4040a0;
+    /* Typography */
+    --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+    /* Z-index Scale */
+    --z-base: 0;
+    --z-elevated: 10;
+    --z-sticky: 100;
+    --z-overlay: 500;
+    --z-modal: 1000;
+    --z-toast: 1100;
 }
