@@ -36,9 +36,9 @@ class RedisStore(BaseStore):
 
     def __init__(
             self,
-            ttl: int = 3600,
-            namespace_prefix: str = "deepagents:",
-            enable_search: bool = False
+            ttl: int = 3600,  # Redis key默认过期时间：1小时后
+            namespace_prefix: str = "deepagents:",   # Redis key前缀，隔离不同应用的key
+            enable_search: bool = False # 是否启用语义搜索(预留字段，未来可扩展向量搜索)
     ):
         """
         初始化 Redis Store

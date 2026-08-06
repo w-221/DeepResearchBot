@@ -34,7 +34,7 @@ _session_dir_ctx: ContextVar[Optional[str]] = ContextVar("session_dir", default=
 _thread_id_ctx: ContextVar[Optional[str]] = ContextVar("thread_id", default=None)
 
 '''
-_session_dir_ctx用来存储会话对应的文件夹的位置
+_session_dir_ctx用来存储会话对应的文件夹的位置，这样不同会话产生的文件就会存储在各自的目录下，不会混在一起
 _thread_id_ctx用来存储会话的线程id
 这两个ContextVar对象起到协程之间数据共享的作用，一个协程可以在里面存入数据，另一个协程可以取出数据
 '''

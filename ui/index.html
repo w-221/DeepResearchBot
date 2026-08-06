@@ -4,47 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DeepSearchAgent - 深度搜索助手</title>
-    <link rel="stylesheet" href="/ui/css/reset.css">
-    <link rel="stylesheet" href="/ui/css/variables.css">
-    <link rel="stylesheet" href="/ui/css/style.css">
+    <link rel="stylesheet" href="/assets/css/reset.css">
+    <link rel="stylesheet" href="/assets/css/variables.css">
+    <link rel="stylesheet" href="/assets/css/style.css">
     <style>
-        /* 额外的内联样式 */
+        /* Connection Status Indicator */
         .status-indicator {
             display: inline-block;
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             margin-right: 8px;
+            position: relative;
         }
         .status-connected {
             background-color: var(--color-success);
-            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
-            animation: pulse 2s infinite;
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.5), 0 0 16px rgba(34, 197, 94, 0.2);
+            animation: statusPulse 2s ease-in-out infinite;
         }
         .status-disconnected {
             background-color: var(--color-error);
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
         }
         .status-connecting {
             background-color: var(--color-warning);
-            animation: spin 1s linear infinite;
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+            animation: statusPulse 1s ease-in-out infinite;
         }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.85); }
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
         .connection-info {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            padding: 8px 12px;
-            background: var(--color-bg-alt);
-            border-radius: 20px;
-            font-size: 0.85rem;
+            padding: 6px 16px;
+            background: rgba(17, 24, 39, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: var(--radius-full, 9999px);
+            font-size: 0.8rem;
+            color: var(--color-text-muted);
             margin-bottom: 20px;
-            border: 1px solid var(--color-border);
+            border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.12));
+            letter-spacing: 0.01em;
         }
     </style>
 </head>
@@ -202,8 +209,8 @@
         </div>
     </div>
 
-    <script src="/ui/js/auth.js"></script>
-    <script src="/ui/js/websocket.js"></script>
-    <script src="/ui/js/app.js"></script>
+    <script src="/assets/js/auth.js"></script>
+    <script src="/assets/js/websocket.js"></script>
+    <script src="/assets/js/app.js"></script>
 </body>
 </html>

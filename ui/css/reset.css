@@ -1,4 +1,4 @@
-/* CSS Reset - 重置默认样式 */
+/* CSS Reset - Dark Theme Base */
 
 * {
     margin: 0;
@@ -11,9 +11,13 @@ html, body {
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-family: var(--font-family, 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background: var(--color-bg, #030712);
+    color: var(--color-text, #F1F5F9);
+    line-height: 1.6;
+    overflow-x: hidden;
 }
 
 a {
@@ -34,4 +38,28 @@ ul, ol {
 img, svg {
     display: block;
     max-width: 100%;
+}
+
+::selection {
+    background: rgba(99, 102, 241, 0.3);
+    color: #F1F5F9;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.2);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.35);
 }

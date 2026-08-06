@@ -49,7 +49,7 @@ class ContextOffloadManager:
             max_tokens: 最大 token 阈值
             warning_threshold: 警告阈值比例（0.0-1.0）
             offload_strategy: 卸载策略
-                - "oldest_first": 优先卸载最旧的消息
+                - "oldest_first": 优先卸载最旧的消息(默认)
                 - "largest_first": 优先卸载最大的消息
                 - "tool_results_first": 优先卸载工具调用结果
             redis_ttl: Redis 中卸载内容的过期时间（秒）
