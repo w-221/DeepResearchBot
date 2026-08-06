@@ -13,7 +13,7 @@
 - [API 接口](#api-接口)
 - [前端界面](#前端界面)
 - [配置说明](#配置说明)
-
+- [未修的bug](#未修的bug)
 ---
 
 ## 系统架构
@@ -484,4 +484,13 @@ REFRESH_TOKEN_EXPIRE_MINUTES=10080  # 7天
 ```env
 RAGFLOW_API_KEY=xxx                 # RAGFlow API Key
 RAGFLOW_API_URL=http://localhost:9380  # RAGFlow 服务地址
+```
+
+## 未修的bug
+
+```text
+1. Agent执行消息推送：Agent执行过程可以正常推送工作目录创建，主Agent调用，工具调用，执行成功信息，但无法推送子Agent调用信息
+原因：代码中未实现相关逻辑
+2. Agent无法读取上传的文档：文档可正常上传至服务器中指定会话目录updated/session_xxxx下，但是Agent仍然提示文档未上传，要用户先上传文档
+3. 用户无法上传并修改头像：该功能未实现
 ```

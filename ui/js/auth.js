@@ -186,7 +186,8 @@ function initLoginTypeSwitch() {
     const passwordForm = document.getElementById('password-login-form');
     const codeForm = document.getElementById('code-login-form');
 
-    if (passwordSwitchBtn && codeSwitchBtn) {
+    // 所有依赖元素都存在时才初始化
+    if (passwordSwitchBtn && codeSwitchBtn && passwordForm && codeForm) {
         passwordSwitchBtn.addEventListener('click', () => {
             currentLoginType = 'password';
             passwordSwitchBtn.classList.add('active');
@@ -202,10 +203,17 @@ function initLoginTypeSwitch() {
             passwordForm.style.display = 'none';
             codeForm.style.display = 'block';
         });
-    }
 
-    // 默认选中密码登录
-    passwordSwitchBtn.click();
+        // 默认选中密码登录（移到 if 块内部，确保 passwordSwitchBtn 非空）
+        passwordSwitchBtn.click();
+    } else {
+        console.error('initLoginTypeSwitch: 未找到必要的DOM元素', {
+            passwordSwitchBtn: !!passwordSwitchBtn,
+            codeSwitchBtn: !!codeSwitchBtn,
+            passwordForm: !!passwordForm,
+            codeForm: !!codeForm,
+        });
+    }
 }
 
 /**

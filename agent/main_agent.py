@@ -93,7 +93,6 @@ main_agent = create_deep_agent(
     skills=[str(skills_directory)]
 )
 
-
 async def run_deep_agent(query: str, thread_id: str,user_id: str = None):
     """
     运行 Deep Agent 任务。
@@ -114,7 +113,7 @@ async def run_deep_agent(query: str, thread_id: str,user_id: str = None):
     if not os.path.exists(output_sub_dir):
         os.makedirs(output_sub_dir)
 
-    # 2. 设置上下文变量（必须在推送 WebSocket 消息之前设置）
+    # 2. 设置上下文变量（必须在推送 WebSocket 消息之前设置，保证不同用户的WebSocket通信管道隔离）
     session_token = set_session_context(session_dir)
     thread_token = set_thread_context(thread_id)
 
@@ -205,7 +204,7 @@ async def run_deep_agent(query: str, thread_id: str,user_id: str = None):
             output = str(result)
 
         print(f"[DEBUG] Final output: {output[:200] if len(output) > 200 else output}...")
-        monitor.report_task_result(output)
+        monitor.report_task_result(output)   # 推送任务最终结果
         agent_logger._write_log("FINAL_RESULT", output)
 
         # 9. 保存AI回复到记忆
