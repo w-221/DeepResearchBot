@@ -11,7 +11,16 @@ import time
 from typing import Optional, Dict, Any, List, Union
 from datetime import datetime, timedelta
 
-from langgraph.store.base import BaseStore, Item, SearchItem, Op, Result, NamespacePath
+from langgraph.store.base import (
+    BaseStore,
+    Item,
+    SearchItem,
+    GetOp,
+    SearchOp,
+    PutOp,
+    ListNamespacesOp,
+    NamespacePath,
+)
 from api.redis_client import get_redis_client
 import redis
 
@@ -73,6 +82,18 @@ class RedisStore(BaseStore):
         ns_str = ":".join(str(n) for n in namespace)
         return f"{self.namespace_prefix}{ns_str}:{key}"
 
+    def _build_prefix(self, namespace: tuple) -> str:
+        """
+        构建 namespace 对应的 Redis key 前缀（不含通配符）。
+
+        用于内存模式的 startswith 精确匹配；Redis 模式 scan 时在其后追加 "*" 作为 glob。
+        与 _build_key 的拼接规则保持一致。
+        """
+        ns_str = ":".join(str(n) for n in namespace)
+        if ns_str:
+            return f"{self.namespace_prefix}{ns_str}:"
+        return self.namespace_prefix
+
     def _serialize_value(self, value: Any) -> str:
         """序列化值为 JSON 字符串"""
         try:
@@ -123,16 +144,15 @@ class RedisStore(BaseStore):
 
             value = self._deserialize_value(value_str)
 
-            # 获取 TTL
-            ttl = self.client.ttl(redis_key)
-
+            # 注意：langgraph.store.base.Item 使用 __slots__，仅包含
+            # value/key/namespace/created_at/updated_at 五个字段，不包含 ttl，
+            # 传入 ttl 会导致 TypeError。
             return Item(
                 namespace=list(namespace),
                 key=key,
                 value=value,
                 created_at=datetime.now(),
                 updated_at=datetime.now(),
-                ttl=ttl if ttl > 0 else None
             )
         except Exception as e:
             logger.error(f"Redis GET 失败 [{namespace}:{key}]: {e}")
@@ -212,14 +232,13 @@ class RedisStore(BaseStore):
             搜索结果列表
         """
         try:
-            ns_prefix = ":".join(str(n) for n in namespace_prefix)
-            pattern = f"{self.namespace_prefix}{ns_prefix}:*"
+            prefix = self._build_prefix(namespace_prefix)
 
             if hasattr(self, '_memory_store'):
                 # 内存模式
                 results = []
                 for redis_key, value in self._memory_store.items():
-                    if redis_key.startswith(pattern):
+                    if redis_key.startswith(prefix):
                         parts = redis_key[len(self.namespace_prefix):].split(":")
                         if len(parts) >= 2:
                             key = parts[-1]
@@ -228,6 +247,8 @@ class RedisStore(BaseStore):
                                 namespace=namespace,
                                 key=key,
                                 value=value,
+                                created_at=datetime.now(),
+                                updated_at=datetime.now(),
                                 score=1.0
                             ))
                 return results[offset:offset + limit]
@@ -236,7 +257,7 @@ class RedisStore(BaseStore):
             results = []
             cursor = 0
             while True:
-                cursor, keys = self.client.scan(cursor=cursor, match=pattern, count=100)
+                cursor, keys = self.client.scan(cursor=cursor, match=prefix + "*", count=100)
 
                 for redis_key in keys:
                     value_str = self.client.get(redis_key)
@@ -254,6 +275,8 @@ class RedisStore(BaseStore):
                                 namespace=namespace,
                                 key=key,
                                 value=value,
+                                created_at=datetime.now(),
+                                updated_at=datetime.now(),
                                 score=1.0
                             ))
 
@@ -279,28 +302,53 @@ class RedisStore(BaseStore):
         # 完整实现需要解析所有 key 并提取命名空间层级
         return []
 
-    def batch(self, ops: List[Op]) -> List[Result]:
-        """批量操作"""
+    def batch(self, ops: List[Any]) -> List[Any]:
+        """
+        批量操作。
+
+        LangGraph BaseStore 将 get/put/search/delete/list_namespaces 统一抽象为对
+        batch/abatch 的调用，Op 是 GetOp/SearchOp/PutOp/ListNamespacesOp 的 NamedTuple
+        联合类型。这里按 op 的实际类型分发到对应的同步方法。
+
+        注意：PutOp.value 为 None 时表示删除操作。
+        """
         results = []
         for op in ops:
             try:
-                if op.op == "get":
-                    item = self.get(op.namespace, op.key)
-                    results.append(Result(value=item.value if item else None))
-                elif op.op == "put":
-                    self.put(op.namespace, op.key, op.value, ttl=op.kwargs.get("ttl"))
-                    results.append(Result(value=None))
-                elif op.op == "delete":
-                    self.delete(op.namespace, op.key)
-                    results.append(Result(value=None))
+                if isinstance(op, GetOp):
+                    results.append(self.get(op.namespace, op.key))
+                elif isinstance(op, SearchOp):
+                    results.append(
+                        self.search(
+                            op.namespace_prefix,
+                            query=op.query,
+                            filter=op.filter,
+                            limit=op.limit,
+                            offset=op.offset,
+                        )
+                    )
+                elif isinstance(op, PutOp):
+                    if op.value is None:
+                        # value=None 表示删除
+                        self.delete(op.namespace, op.key)
+                    else:
+                        # 说明：LangGraph 的 PutOp.ttl 单位为分钟，而本项目 RedisStore
+                        # 统一按秒处理 TTL；当前调用方均未通过 batch 路径显式传 TTL，
+                        # 故此处使用 store 默认 TTL，避免单位不一致导致误判。
+                        self.put(op.namespace, op.key, op.value)
+                    results.append(None)
+                elif isinstance(op, ListNamespacesOp):
+                    results.append(self.list_namespaces())
                 else:
-                    results.append(Result(error=f"Unsupported operation: {op.op}"))
+                    logger.warning(f"Unsupported op type: {type(op).__name__}")
+                    results.append(None)
             except Exception as e:
-                results.append(Result(error=str(e)))
+                logger.error(f"Batch op failed ({type(op).__name__}): {e}")
+                results.append(None)
 
         return results
 
-    async def abatch(self, ops: List[Op]) -> List[Result]:
+    async def abatch(self, ops: List[Any]) -> List[Any]:
         """异步批量操作（Redis 客户端为同步，直接复用 batch 逻辑）"""
         return self.batch(ops)
 
@@ -320,11 +368,10 @@ class RedisStore(BaseStore):
             删除的 key 数量
         """
         try:
-            ns_prefix = ":".join(str(n) for n in namespace)
-            pattern = f"{self.namespace_prefix}{ns_prefix}:*"
+            prefix = self._build_prefix(namespace)
 
             if hasattr(self, '_memory_store'):
-                keys_to_delete = [k for k in self._memory_store.keys() if k.startswith(pattern)]
+                keys_to_delete = [k for k in self._memory_store.keys() if k.startswith(prefix)]
                 for key in keys_to_delete:
                     del self._memory_store[key]
                 return len(keys_to_delete)
@@ -333,7 +380,7 @@ class RedisStore(BaseStore):
             deleted_count = 0
             cursor = 0
             while True:
-                cursor, keys = self.client.scan(cursor=cursor, match=pattern, count=100)
+                cursor, keys = self.client.scan(cursor=cursor, match=prefix + "*", count=100)
                 if keys:
                     deleted_count += self.client.delete(*keys)
                 if cursor == 0:

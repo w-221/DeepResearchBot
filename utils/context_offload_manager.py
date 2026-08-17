@@ -10,15 +10,45 @@ Context Offload Manager - 上下文卸载管理器
 """
 
 import json
+import math
 import logging
 from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
 
-from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, ToolMessage
+from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, ToolMessage, SystemMessage
 from utils.redis_store_backend import RedisStore
 from api.context import get_session_context, get_thread_context
 
 logger = logging.getLogger(__name__)
+
+# 卸载引用消息的统一标记，用于识别"已被卸载、只保留指针"的消息
+OFFLOAD_MARKER = "[OFFLOADED TO REDIS]"
+
+
+def _coerce_to_message(message: Any) -> BaseMessage:
+    """将 dict 形式的消息统一转换为 LangChain BaseMessage。
+
+    记忆管理器返回的历史消息为 BaseMessage，但主流程拼接的当前用户输入可能是
+    {"role": ..., "content": ...} 的 dict。若不归一化，后续访问 message.type 会抛
+    AttributeError。这里统一转换为对应的 BaseMessage 子类。
+    """
+    if isinstance(message, BaseMessage):
+        return message
+    if isinstance(message, dict):
+        role = message.get("role", "user")
+        content = message.get("content", "")
+        if role == "system":
+            return SystemMessage(content=content)
+        if role == "assistant":
+            return AIMessage(content=content)
+        return HumanMessage(content=content)
+    return message
+
+
+def _is_offload_reference(message: BaseMessage) -> bool:
+    """判断消息是否为已卸载的引用指针（避免重复卸载）。"""
+    content = getattr(message, "content", "")
+    return isinstance(content, str) and content.startswith(OFFLOAD_MARKER)
 
 class ContextOffloadManager:
     """
@@ -87,11 +117,11 @@ class ContextOffloadManager:
         if not text:
             return 0
 
-        # 简单估算：中文 1 字符 ≈ 1 token，英文 4 字符 ≈ 1 token
+        # 简单估算：中文 1 字符 ≈ 1 token，英文/其他约 4 字符 ≈ 1 token（向上取整，避免短文本被低估为 0）
         chinese_chars = sum(1 for c in text if '\u4e00' <= c <= '\u9fff')
         other_chars = len(text) - chinese_chars
 
-        return chinese_chars + (other_chars // 4)
+        return chinese_chars + math.ceil(other_chars / 4)
 
     def calculate_message_tokens(self, message: BaseMessage) -> int:
         """计算单条消息的 token 数量"""
@@ -128,14 +158,20 @@ class ContextOffloadManager:
         Returns:
             [(index, message), ...] 要卸载的消息列表
         """
+        # 保留系统消息和最后 3 条消息，且跳过已是引用指针的消息（避免重复卸载）
+        def _eligible(i: int, msg: BaseMessage) -> bool:
+            if msg.type == "system" or i >= len(messages) - 3:
+                return False
+            if _is_offload_reference(msg):
+                return False
+            return True
+
         if self.offload_strategy == "oldest_first":
             # 优先卸载最旧的（排除系统消息和最近的消息）
             candidates = []
             for i, msg in enumerate(messages):
-                # 保留系统消息和最后 3 条消息
-                if msg.type == "system" or i >= len(messages) - 3:
-                    continue
-                candidates.append((i, msg))
+                if _eligible(i, msg):
+                    candidates.append((i, msg))
 
             # 按索引排序（最旧的在前）
             candidates.sort(key=lambda x: x[0])
@@ -145,20 +181,19 @@ class ContextOffloadManager:
             # 优先卸载最大的消息
             candidates = []
             for i, msg in enumerate(messages):
-                if msg.type == "system" or i >= len(messages) - 3:
-                    continue
-                tokens = self.calculate_message_tokens(msg)
-                candidates.append((i, msg, tokens))
+                if _eligible(i, msg):
+                    tokens = self.calculate_message_tokens(msg)
+                    candidates.append((i, msg, tokens))
 
             # 按 token 数量降序排序
             candidates.sort(key=lambda x: x[2], reverse=True)
             return [(i, msg) for i, msg, _ in candidates]
 
         elif self.offload_strategy == "tool_results_first":
-            # 优先卸载工具调用结果
+            # 优先卸载工具调用结果（同样保留最近消息，避免打断进行中的工具调用链）
             candidates = []
             for i, msg in enumerate(messages):
-                if isinstance(msg, ToolMessage):
+                if isinstance(msg, ToolMessage) and _eligible(i, msg):
                     candidates.append((i, msg))
 
             # 按索引排序
@@ -166,8 +201,14 @@ class ContextOffloadManager:
             return candidates
 
         else:
-            # 默认：oldest_first
-            return self.select_messages_to_offload(messages)
+            # 未知策略：回退到 oldest_first，避免原先的无限递归
+            logger.warning(f"Unknown offload strategy '{self.offload_strategy}', fallback to oldest_first")
+            candidates = []
+            for i, msg in enumerate(messages):
+                if _eligible(i, msg):
+                    candidates.append((i, msg))
+            candidates.sort(key=lambda x: x[0])
+            return candidates
 
     def offload_message(
             self,
@@ -188,8 +229,10 @@ class ContextOffloadManager:
         """
         try:
             # 构建命名空间和 key
+            # key 仅使用消息索引（幂等）：同一会话多次卸载同一位置的消息时复用同一 key，
+            # 避免每次卸载都生成新 key 导致 Redis 中堆积过期副本。
             namespace = (thread_id, "offloaded_messages")
-            key = f"msg_{index}_{int(datetime.now().timestamp())}"
+            key = f"msg_{index}"
 
             # 序列化消息
             message_data = {
@@ -250,7 +293,8 @@ class ContextOffloadManager:
         elif isinstance(original_message, ToolMessage):
             return ToolMessage(content=reference_text, tool_call_id=getattr(original_message, 'tool_call_id', ''))
         else:
-            return type(original_message)(content=reference_text)
+            # 其他消息类型统一回退为 HumanMessage，避免 type(msg)(content=...) 对特殊类型构造失败
+            return HumanMessage(content=reference_text)
 
     def load_offloaded_message(
             self,
@@ -297,6 +341,9 @@ class ContextOffloadManager:
         Returns:
             优化后的消息列表
         """
+        # 归一化消息类型：将 dict 统一转换为 BaseMessage，避免后续访问 .type/.content 出错
+        messages = [_coerce_to_message(m) for m in messages]
+
         if not thread_id:
             thread_id = get_thread_context() or "default"
 
@@ -375,3 +422,16 @@ class ContextOffloadManager:
     def get_stats(self) -> Dict[str, Any]:
         """获取统计信息"""
         return self.stats.copy()
+
+
+# 全局单例，供自动卸载（run_deep_agent）与卸载工具（offload_tools）共享，
+# 使 get_offload_stats 等工具能返回真实统计信息。
+_offload_manager: Optional["ContextOffloadManager"] = None
+
+
+def get_offload_manager(max_tokens: int = 20000, **kwargs) -> "ContextOffloadManager":
+    """获取全局上下文卸载管理器单例。"""
+    global _offload_manager
+    if _offload_manager is None:
+        _offload_manager = ContextOffloadManager(max_tokens=max_tokens, **kwargs)
+    return _offload_manager
