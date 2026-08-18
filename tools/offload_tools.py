@@ -5,7 +5,7 @@ Offload Tools - 允许 Agent 主动管理卸载的内容
 
 from typing import Annotated
 from langchain_core.tools import tool
-from utils.context_offload_manager import ContextOffloadManager
+from utils.context_offload_manager import get_offload_manager
 from api.context import get_thread_context
 from api.monitor import monitor
 
@@ -32,7 +32,7 @@ def load_offloaded_message(
         return "错误：无法获取当前会话 ID"
 
     try:
-        manager = ContextOffloadManager()
+        manager = get_offload_manager()
         message_data = manager.load_offloaded_message(thread_id, redis_key)
 
         if message_data:
@@ -64,7 +64,7 @@ def get_offload_stats() -> str:
     monitor.report_tool("get_offload_stats")
 
     try:
-        manager = ContextOffloadManager()
+        manager = get_offload_manager()
         stats = manager.get_stats()
 
         return (
@@ -95,19 +95,20 @@ def trigger_context_offload() -> str:
         return "错误：无法获取当前会话 ID"
 
     try:
-        manager = ContextOffloadManager()
+        manager = get_offload_manager()
 
-        # 注意：这里需要从 LangGraph State 中获取当前消息列表
-        # 但由于工具函数无法直接访问 State，我们需要通过其他方式实现
-        # 方案：返回提示信息，让主流程在适当位置自动调用 optimize_messages
+        # 说明：卸载操作依赖当前对话消息列表（LangGraph State），而独立 @tool 无法
+        # 直接访问 State，因此这里返回实时的卸载状态，实际的自动卸载由主流程
+        # run_deep_agent 在 token 超限时调用 optimize_messages 完成。
 
         stats = manager.get_stats()
         return (
-            f"上下文卸载提示:\n"
-            f"- 当前上下文 tokens: {stats['current_context_tokens']}\n"
-            f"- 总卸载次数: {stats['total_offloads']}\n\n"
-            f"注意：实际的卸载操作由系统在检测到 token 超限时自动执行。\n"
-            f"如需手动管理，请使用 load_offloaded_message 工具恢复内容。"
+            f"上下文卸载状态:\n"
+            f"- 最近一次检测的上下文 tokens: {stats['current_context_tokens']}\n"
+            f"- 总卸载次数: {stats['total_offloads']}\n"
+            f"- 卸载数据总量: {stats['total_bytes_offloaded']} bytes\n\n"
+            f"卸载由系统在 token 接近阈值时自动执行；如需恢复已卸载内容，"
+            f"请使用 load_offloaded_message 工具。"
         )
     except Exception as e:
         return f"触发卸载失败: {str(e)}"
@@ -130,7 +131,7 @@ def cleanup_offloaded_content() -> str:
         return "错误：无法获取当前会话 ID"
 
     try:
-        manager = ContextOffloadManager()
+        manager = get_offload_manager()
         deleted_count = manager.cleanup_expired(thread_id)
 
         return f"已清理 {deleted_count} 个卸载的内容项"
